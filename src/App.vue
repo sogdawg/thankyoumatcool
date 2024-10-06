@@ -171,7 +171,7 @@ export default defineComponent({
         const playing = ref(false);
         const fetching = ref(false);
 
-        const useOldList = window.location.search.includes('2017');
+        const useOldList = computed(() => window.location.search.includes('2017'));
 
         const stopHandler = unloadHandler(playing);
         onUnmounted(() => {
@@ -198,7 +198,7 @@ export default defineComponent({
                 // is this even worth it
                 demons.push(...(await fetchDemons(250)).filter(demon => demon.levelID));
             }
-            if (useOldList) {
+            if (useOldList.value) {
                 demons = veryOldDemons.slice();
             }
             fetching.value = false;
