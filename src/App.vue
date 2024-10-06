@@ -9,18 +9,19 @@
                     @click="showAboutModal = true"
                 >
                     Extreme Demon Roulette
+                    <p v-if="useOldList">2017 List</p>
                 </h1>
                 <div class="flex mt-5 mx-3 justify-between items-center">
                     <div class="flex flex-col text-gray-800 dark:text-gray-300">
                         <label>
-                            <input type="checkbox" v-model="selectedLists.main" />
+                            <input type="checkbox" v-model="selectedLists.main" :disabled="useOldList" />
                             Main list
                         </label>
-                        <label>
+                        <label v-if="!useOldList">
                             <input type="checkbox" v-model="selectedLists.extended" />
                             Extended list
                         </label>
-                        <label>
+                        <label v-if="!useOldList">
                             <input type="checkbox" v-model="selectedLists.legacy" />
                             Legacy list
                         </label>
@@ -133,6 +134,7 @@ import GiveUpModal from './components/GiveUpModal.vue';
 import { RouletteState, SimplifiedDemon } from './types';
 import { shuffle, clearArray } from './utils';
 import { unloadHandler } from './unloadHandler';
+import { veryOldDemons } from './veryOldList';
 import { simplifyDemon, compressState, decompressState } from './save';
 import { saveAs } from 'file-saver';
 
@@ -169,6 +171,8 @@ export default defineComponent({
         const playing = ref(false);
         const fetching = ref(false);
 
+        const useOldList = window.location.search.includes('2017');
+
         const stopHandler = unloadHandler(playing);
         onUnmounted(() => {
             stopHandler();
@@ -194,6 +198,9 @@ export default defineComponent({
                 // is this even worth it
                 demons.push(...(await fetchDemons(250)).filter(demon => demon.levelID));
             }
+            if (useOldList) {
+                demons = veryOldDemons.slice();
+            }
             fetching.value = false;
             shuffle(demons);
             currentDemon.value = 0;
@@ -215,6 +222,8 @@ export default defineComponent({
             if (isNaN(percent) || percent < currentPercent.value) return;
             if (percent >= 100) {
                 percent = 100;
+                playing.value = false;
+            } else if (currentDemon.value >= demons.length - 1) {
                 playing.value = false;
             } else {
                 currentDemon.value++;
@@ -309,6 +318,7 @@ export default defineComponent({
             showSaveModal,
             showAboutModal,
             darkMode,
+            useOldList,
         };
     },
 });

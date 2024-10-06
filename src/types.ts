@@ -23,6 +23,7 @@ export interface SimplifiedDemon {
     video: string | null;
     creator: string;
     levelID?: number;
+    link?: string;
 }
 
 export interface RouletteState {

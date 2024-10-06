@@ -3,7 +3,7 @@
         class="flex flex-col md:flex-row p-5 shadow-lg w-full"
         :class="{ 'fade-in-up': animate }"
     >
-        <a :href="`https://youtu.be/${demon.video}`" target="_blank" rel="noopener noreferrer">
+        <a :href="demon.video ? `https://youtu.be/${demon.video}` : '#'" target="_blank" rel="noopener noreferrer">
             <img
                 class="w-full md:w-48 md:h-28"
                 loading="lazy"
@@ -14,7 +14,7 @@
         <div class="flex mt-2 md:mt-0 justify-between md:justify-start">
             <div class="flex flex-col md:ml-5">
                 <a
-                    :href="`https://pointercrate.com/demonlist/${demon.position}`"
+                    :href="demon.link ?? `https://pointercrate.com/demonlist/${demon.position}`"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
