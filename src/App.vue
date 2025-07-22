@@ -16,8 +16,9 @@
                             <input type="checkbox" v-model="selectedLists.main" :disabled="useOldList" />
                             Main list
                         </label>
-                        <label> <input type="checkbox" v-model="excludeRouletteDemons" />
-                            Exclude levels from ongoing roulette
+                        <label v-if="!useOldList">
+                            <input type="checkbox" v-model="selectedLists.extended" />
+                            Extended list
                         </label>
                         <label>
                             <input type="checkbox" v-model="excludeRouletteDemons" />
@@ -88,7 +89,7 @@
                             </p>
                             <p class="mb-2">
                                 All demons come from the official <a href="https://pointercrate.com/" target="_blank" class="text-blue-500 hover:underline">Pointercrate Demonlist</a>,
-                                from April 13, 2020.).
+                                unless you activate the 2017 list via a URL parameter (try adding <code class="bg-gray-200 dark:bg-gray-700 p-1 rounded">?2017</code> to the URL).
                             </p>
                             <p>
                                 Created by <a href="https://github.com/zmxv" target="_blank" class="text-blue-500 hover:underline">zmxv</a> and adapted for your needs.
@@ -259,9 +260,8 @@ export default defineComponent({
         async function start() {
             if (fetching.value) return; // Prevent multiple clicks while data is being processed
             // Ensure at least one list type is selected (main, extended, legacy)
-            if (!Object.values(selectedLists).some(i => i)) {
-                // Optionally, show a message to the user if no list is selected
-                console.warn("Please select at least one list type (Main, Extended, Legacy) to start the roulette.");
+            if (!(selectedLists.main || (selectedLists.extended && !useOldList.value))) {
+                console.warn("Please select at least one list type (Main or Extended) to start the roulette.");
                 return;
             }
 
