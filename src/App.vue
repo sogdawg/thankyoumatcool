@@ -4,7 +4,7 @@
         <div class="flex justify-center">
             <div class="flex flex-col">
                 <h1
-                    class="md:absolute md:left-1/2 md:top-3 md:transform-gpu md:-translate-x-1/2 mt-5 text-3xl font-medium text-center text-gray-800 dark:text-gray-200 cursor-help md:border-b-2 border-dashed hover:border-gray-600 dark:border-gray-600 dark:hover:border-gray-300"
+                    class="md:absolute md:left-1/2 md:top-3 md:-translate-x-1/2 mt-5 text-3xl font-medium text-center text-gray-800 dark:text-gray-200 cursor-help md:border-b-2 border-dashed hover:border-gray-600 dark:border-gray-600 dark:hover:border-gray-300"
                     @click="showAboutModal = true"
                 >
                     Extreme Demon Roulette
@@ -157,7 +157,7 @@ import GiveUpModal from './components/GiveUpModal.vue';
 import { RouletteState, SimplifiedDemon } from './types';
 import { shuffle, clearArray } from './utils';
 import { unloadHandler } from './unloadHandler';
-import { veryOldDemons } from './veryOldList';
+import { veryOldDemons } from './veryOldList'; // Your custom list
 import { simplifyDemon, compressState, decompressState } from './save';
 import { saveAs } from 'file-saver';
 
@@ -173,7 +173,7 @@ export default defineComponent({
         const selectedLists = reactive({
             main: true,
             extended: true,
-            legacy: false,
+            legacy: false, // This property remains in the data, but is not tied to a visible checkbox in the template
         });
 
         let demons = reactive([] as SimplifiedDemon[]);
@@ -216,6 +216,8 @@ export default defineComponent({
             "Lucid Nightmares",
         ]);
 
+        // Removed fetchDemons as we are primarily using veryOldDemons
+
         // --- Lifecycle Hooks & Handlers ---
         const stopHandler = unloadHandler(playing);
         onUnmounted(() => {
@@ -229,6 +231,8 @@ export default defineComponent({
         // --- Functions ---
         async function start() {
             if (fetching.value) return;
+            // Ensure at least one list type is selected (main or extended) when not in old list mode
+            // This check is now more relevant as Main/Extended will filter veryOldDemons
             if (!useOldList.value && !(selectedLists.main || selectedLists.extended)) {
                 console.warn("Please select at least one list type (Main or Extended) to start the roulette.");
                 return;
@@ -240,23 +244,38 @@ export default defineComponent({
 
             clearArray(demons); // Clear the reactive array
 
-            // --- CHANGE 1: Correctly define demonsToLoad based on useOldList ---
-            let demonsToLoad: SimplifiedDemon[] = [];
-            if (useOldList.value) {
-                demonsToLoad = [...veryOldDemons];
+            let demonsToProcess: SimplifiedDemon[] = [...veryOldDemons]; // Start with your full custom list
+
+            console.log(`Starting with ${demonsToProcess.length} demons from veryOldDemons.`);
+
+            // Apply Main/Extended list filters if not in 2017 list mode
+            if (!useOldList.value) {
+                demonsToProcess = demonsToProcess.filter(demon => {
+                    // Define your position ranges for Main and Extended lists within veryOldDemons
+                    // You might need to adjust these ranges based on your veryOldDemons data
+                    const isMainListRange = demon.position >= 1 && demon.position <= 75; // Example: Top 75
+                    const isExtendedListRange = demon.position >= 76 && demon.position <= 150; // Example: 76-150
+
+                    let includeDemon = false;
+                    if (selectedLists.main && isMainListRange) {
+                        includeDemon = true;
+                    }
+                    if (selectedLists.extended && isExtendedListRange) {
+                        includeDemon = true;
+                    }
+
+                    return includeDemon;
+                });
+                console.log(`Demons after Main/Extended filters: ${demonsToProcess.length}`);
             } else {
-                // If not using the old list, and no API fetching is uncommented,
-                // demonsToLoad will be empty. This is expected if you're only
-                // using veryOldDemons as your source for now.
-                // If you want to re-enable fetching from Pointercrate,
-                // you would uncomment and implement that logic here.
+                console.log("Using 2017 list mode, Main/Extended filters are ignored.");
             }
 
             const positionsToExclude: Set<number> = new Set([]);
             const namesToExclude: Set<string> = new Set([]);
 
-            // --- CHANGE 2: Type 'demon' parameter explicitly in filter ---
-            const filteredDemons = demonsToLoad.filter((demon: SimplifiedDemon) => {
+            // Apply all additional filtering rules to the demonsToProcess array
+            const finalFilteredDemons = demonsToProcess.filter((demon: SimplifiedDemon) => {
                 if (positionsToExclude.has(demon.position)) {
                     return false;
                 }
@@ -272,7 +291,15 @@ export default defineComponent({
                 return true;
             });
 
-            demons.push(...filteredDemons);
+            demons.push(...finalFilteredDemons);
+            console.log(`Final demons count after all filters: ${demons.length}`);
+
+            if (demons.length === 0) {
+                console.warn("No demons loaded after applying all filters. Please adjust your selections.");
+                playing.value = false;
+                fetching.value = false;
+                return;
+            }
 
             fetching.value = false;
             shuffle(demons);
