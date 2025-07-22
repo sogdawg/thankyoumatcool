@@ -28,7 +28,7 @@
                     <div class="flex">
                         <button
                             @click="showSaveModal = true"
-                            class="text-white rounded px-4 py-2 bg-blue-500 hover:bg-blue-600 mr-2"
+                            class="rounded px-4 py-2 bg-white text-black border border-gray-300 hover:bg-gray-100 mr-2"
                         >
                             Save
                         </button>
@@ -76,6 +76,7 @@
                     </button>
                 </article>
 
+                <!-- Modals -->
                 <teleport to="body">
                     <Modal v-if="showAboutModal" @close="showAboutModal = false">
                         <template v-slot:header>
@@ -83,13 +84,12 @@
                         </template>
                         <template v-slot:body>
                             <p class="mb-2">
-                                The Extreme Demon Roulette is a challenge where you try to get a certain percent on extreme
-                                demons, starting at 1% and increasing by 1% for each demon. If you reach 100%, you
-                                win the roulette.
+                                This is the updated About section! The Extreme Demon Roulette is a challenge where you must go through as many
+                                demons as possible, with the challenge ending when you get 100% or give up.
                             </p>
                             <p class="mb-2">
                                 All demons come from the official <a href="https://pointercrate.com/" target="_blank" class="text-blue-500 hover:underline">Pointercrate Demonlist</a>,
-                                from April 13, 2020.).
+                                unless you activate the 2017 list via a URL parameter (try adding <code class="bg-gray-200 dark:bg-gray-700 p-1 rounded">?2017</code> to the URL).
                             </p>
                             <p>
                                 Created by <a href="https://github.com/zmxv" target="_blank" class="text-blue-500 hover:underline">zmxv</a> and adapted for your needs.
@@ -149,15 +149,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref, computed, onUnmounted, watchEffect } from 'vue';
+import { defineComponent, reactive, ref, computed, onUnmounted, watchEffect, watch } from 'vue';
 import Demon from './components/Demon.vue';
 import Modal from './components/Modal.vue';
 import SaveModal from './components/SaveModal.vue';
 import GiveUpModal from './components/GiveUpModal.vue';
 import { RouletteState, SimplifiedDemon } from './types';
-import { shuffle, clearArray } from './utils'; // Ensure this path is correct and clearArray is generic
+import { shuffle, clearArray } from './utils';
 import { unloadHandler } from './unloadHandler';
-import { veryOldDemons } from './veryOldList'; // Ensure this path is correct
+import { veryOldDemons } from './veryOldList';
 import { simplifyDemon, compressState, decompressState } from './save';
 import { saveAs } from 'file-saver';
 
@@ -169,189 +169,140 @@ export default defineComponent({
         GiveUpModal,
     },
     setup() {
-        // --- Reactive State Variables (Declared ONCE here) ---
+        // --- Reactive State Variables ---
         const selectedLists = reactive({
             main: true,
             extended: true,
             legacy: false,
         });
 
-        // The main array holding the demons for the roulette.
-        // It's declared as a reactive array of SimplifiedDemon.
         let demons = reactive([] as SimplifiedDemon[]);
 
         const playing = ref(false);
-        const fetching = ref(false); // Indicates if data is being fetched/processed
+        const fetching = ref(false);
 
-        // Old list mode from URL parameter
         const useOldList = computed(() => window.location.search.includes('2017'));
 
-        // New reactive variable for the "Exclude Ongoing Roulette Levels" option
         const excludeRouletteDemons = ref(false);
 
-        // Current demon being played and its current percentage
+        // TEMPORARY DEBUG: Watch for changes to the checkbox states
+        watch([selectedLists, excludeRouletteDemons], () => {
+            console.log("Checkbox states changed:");
+            console.log("Main:", selectedLists.main);
+            console.log("Extended:", selectedLists.extended);
+            console.log("Exclude Roulette:", excludeRouletteDemons.value);
+        }, { deep: true });
+
         const currentDemon = ref(0);
         const currentPercent = ref(1);
-        const percents = reactive([] as number[]); // Stores percentages achieved for each demon
+        const percents = reactive([] as number[]);
 
-        // Modals and UI visibility controls
         const showRemaining = ref(false);
         const showGiveUpModal = ref(false);
         const showSaveModal = ref(false);
         const showAboutModal = ref(false);
 
-        // Dark mode control
         const darkMode = ref(localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches));
 
         // --- Constants ---
-        // List of demon names to exclude for the ongoing roulette
-        const ONGOING_ROULETTE_EXCLUSIONS = new Set<string>([ // Explicitly typed as Set<string>
-            "Ethereal Artifice",
-            "Carnage Mode",
-            "Zodiac",
-            "Glowy",
-            "Audio Expulsion",
-            "GridLocked",
-            "WaveBreaker",
-            "The Hell Zone",
-            "Shock Therapy",
-            "Renevant",
-            "The Hell Factory",
-            "Novalis",
-            "Spacial Rend",
-            "Niflheim",
-            "Arctic Arena",
-            "Ithacropolis",
-            "The Hell World",
-            "The Hell Origin",
-            "Conical Depression",
-            "Penultimate Phase",
-            "Bausha Vortex",
-            "Elite Z Rebirth",
-            "Prismatic Haze",
-            "Devil Vortex",
-            "Rate Demon",
-            "Delta Interface",
-            "Phobos",
-            "Digital Descent",
-            "Down Bass by Spectra",
-            "Asmodeus",
-            "The Hell Dignity",
-            "Ouroboros",
-            "Omega",
+        const ONGOING_ROULETTE_EXCLUSIONS = new Set<string>([
+            "Ethereal Artifice", "Carnage Mode", "Zodiac", "Glowy", "Audio Expulsion",
+            "GridLocked", "WaveBreaker", "The Hell Zone", "Shock Therapy", "Renevant",
+            "The Hell Factory", "Novalis", "Spacial Rend", "Niflheim", "Arctic Arena",
+            "Ithacropolis", "The Hell World", "The Hell Origin", "Conical Depression",
+            "Penultimate Phase", "Bausha Vortex", "Elite Z Rebirth", "Prismatic Haze",
+            "Devil Vortex", "Rate Demon", "Delta Interface", "Phobos", "Digital Descent",
+            "Down Bass by Spectra", "Asmodeus", "The Hell Dignity", "Ouroboros", "Omega",
             "Lucid Nightmares",
         ]);
 
         // --- Lifecycle Hooks & Handlers ---
-        // This stops the unload handler when the component is unmounted
         const stopHandler = unloadHandler(playing);
         onUnmounted(() => {
             stopHandler();
         });
 
-        // Watch for changes in darkMode and update localStorage
         watchEffect(() => {
             localStorage.setItem('theme', darkMode.value ? 'dark' : 'light');
         });
 
         // --- Functions ---
-
-        // Function to start/restart the roulette
         async function start() {
-            if (fetching.value) return; // Prevent multiple clicks while data is being processed
-            // Ensure at least one list type is selected (main, extended, legacy)
-            if (!(selectedLists.main || (selectedLists.extended && !useOldList.value))) {
+            if (fetching.value) return;
+            if (!useOldList.value && !(selectedLists.main || selectedLists.extended)) {
                 console.warn("Please select at least one list type (Main or Extended) to start the roulette.");
                 return;
             }
 
             playing.value = true;
-            fetching.value = true; // Set fetching state
-            showRemaining.value = false; // Hide remaining demons section
+            fetching.value = true;
+            showRemaining.value = false;
 
-            // Clear the reactive array of demons
-            clearArray(demons); // This calls the generic clearArray<T>(arr: T[])
+            clearArray(demons); // Clear the reactive array
 
-            // Load all demons from your veryOldDemons list into a temporary array first
-            // This is crucial to avoid issues with directly pushing into a potentially re-declared reactive object.
-            const allDemonsFromSource: SimplifiedDemon[] = [...veryOldDemons]; // Use spread to create a new array
+            // --- CHANGE 1: Correctly define demonsToLoad based on useOldList ---
+            let demonsToLoad: SimplifiedDemon[] = [];
+            if (useOldList.value) {
+                demonsToLoad = [...veryOldDemons];
+            } else {
+                // If not using the old list, and no API fetching is uncommented,
+                // demonsToLoad will be empty. This is expected if you're only
+                // using veryOldDemons as your source for now.
+                // If you want to re-enable fetching from Pointercrate,
+                // you would uncomment and implement that logic here.
+            }
 
-            // Define specific positions to always exclude
-            const positionsToExclude: Set<number> = new Set([
-                // Add any other specific positions you want to exclude here (which you can get from veryOldList.ts)
-            ]);
+            const positionsToExclude: Set<number> = new Set([]);
+            const namesToExclude: Set<string> = new Set([]);
 
-            // Define specific demon names to always exclude (beyond the main roulette exclusions)
-            const namesToExclude: Set<string> = new Set([ // Explicitly typed as Set<string>
-                // Add specific names here if needed: "Another Demon Name", "Some Other Demon",
-            ]);
-
-            // Apply all filtering rules to allDemonsFromSource
-            const filteredDemons = allDemonsFromSource.filter(demon => {
-                // Rule 1: Exclude by specific position
+            // --- CHANGE 2: Type 'demon' parameter explicitly in filter ---
+            const filteredDemons = demonsToLoad.filter((demon: SimplifiedDemon) => {
                 if (positionsToExclude.has(demon.position)) {
                     return false;
                 }
-
-                // Rule 2: Exclude by specific name (other than the ongoing roulette list)
                 if (namesToExclude.has(demon.name)) {
                     return false;
                 }
-
-                // Rule 3: Exclude entries that are incomplete (e.g., no video link, empty creator/link)
                 if (demon.video === null || demon.creator === "" || demon.link === "") {
                      return false;
                 }
-
-                // Rule 4: Conditional exclusion for ongoing roulette levels (based on checkbox state)
                 if (excludeRouletteDemons.value && ONGOING_ROULETTE_EXCLUSIONS.has(demon.name)) {
                     return false;
                 }
-
-                return true; // Include the demon if it passes all exclusion checks
+                return true;
             });
 
-            // Populate the 'demons' reactive array with the filtered results
             demons.push(...filteredDemons);
 
-            fetching.value = false; // Data processing is complete
-            shuffle(demons); // Shuffle the now-filtered list in place (your shuffle returns the array, but also modifies in place)
-
-            currentDemon.value = 0; // Start at the first demon
-            currentPercent.value = 1; // Reset percentage for the new run
-            clearArray(percents); // Clear percentage history
+            fetching.value = false;
+            shuffle(demons);
+            currentDemon.value = 0;
+            currentPercent.value = 1;
+            clearArray(percents);
         }
 
-        // Handles a demon completion event (when a demon is passed/done)
         function demonDone(percent: number) {
-            // Basic validation: ensure percent is a number and not less than the current required percent
             if (isNaN(percent) || percent < currentPercent.value) {
                 console.warn(`Invalid percent received: ${percent}. Must be a number and greater than or equal to ${currentPercent.value}`);
                 return;
             }
-
             if (percent >= 100) {
-                // If 100% or more is achieved, the challenge ends
-                percent = 100; // Cap at 100%
+                percent = 100;
                 playing.value = false;
             } else if (currentDemon.value >= demons.length - 1) {
-                // If all available demons have been gone through, but 100% wasn't hit
                 playing.value = false;
             } else {
-                // Move to the next demon in the sequence
                 currentDemon.value++;
             }
-            currentPercent.value = percent + 1; // Set the next target percentage
-            percents.push(percent); // Record the percentage achieved for the current demon
+            currentPercent.value = percent + 1;
+            percents.push(percent);
         }
 
-        // Handles giving up the roulette challenge
         function giveUp() {
-            showGiveUpModal.value = false; // Close the modal
-            playing.value = false; // Stop the game
+            showGiveUpModal.value = false;
+            playing.value = false;
         }
 
-        // Saves the current game state to a file
         function save() {
             const state: RouletteState = {
                 playing: playing.value,
@@ -361,32 +312,30 @@ export default defineComponent({
                 percent: currentPercent.value,
                 percents: percents,
             };
-            const data = compressState(state); // Compress the state into a storable format
-            const blob = new Blob([data], { type: 'application/msgpack' }); // Create a Blob for the file
-            saveAs(blob, 'roulette-save.mp'); // Trigger file download
+            const data = compressState(state);
+            const blob = new Blob([data], { type: 'application/msgpack' });
+            saveAs(blob, 'roulette-save.mp');
         }
 
-        // Callback for when the save modal closes, potentially handling a loaded file
         function onSaveModalClose(file?: File) {
             if (file) {
-                loadSave(file); // Load state if a file was provided
+                loadSave(file);
             }
-            showSaveModal.value = false; // Close the save modal
+            showSaveModal.value = false;
         }
 
-        // Loads game state from a provided save file
         function loadSave(file: File) {
             file.arrayBuffer().then(buffer => {
-                const state = decompressState(new Uint8Array(buffer)); // Decompress the state
+                const state = decompressState(new Uint8Array(buffer));
                 playing.value = state.playing;
-                Object.assign(selectedLists, state.selectedLists); // Restore selected lists
+                Object.assign(selectedLists, state.selectedLists);
                 clearArray(demons);
-                demons.push(...state.demons); // Restore demons array
+                demons.push(...state.demons);
                 currentDemon.value = state.current;
                 currentPercent.value = state.percent;
                 clearArray(percents);
-                percents.push(...state.percents); // Restore percents history
-                showRemaining.value = false; // Hide remaining demons section after load
+                percents.push(...state.percents);
+                showRemaining.value = false;
             }).catch(error => {
                 console.error("Failed to load save file:", error);
                 alert("Failed to load save file. It might be corrupted or an old format.");
@@ -394,54 +343,27 @@ export default defineComponent({
         }
 
         // --- Computed Properties ---
-        // Returns the subset of demons currently being displayed (up to the current active demon)
         const currentDemons = computed(() => {
             return demons.slice(0, currentDemon.value + 1);
         });
 
-        // Determines if the results section should be shown
         const showResults = computed(() => {
             return !playing.value && demons.length > 0;
         });
 
-        // Calculates and returns the demons that remain after the current challenge has ended
         const remainingDemons = computed(() => {
-            // Filters out demons that would exceed 100% in rank
             return demons
                 .slice(currentDemon.value + 1)
                 .filter((_, i) => currentPercent.value + i + 1 <= 100);
         });
 
         // --- Return properties and methods to the template ---
-        // All reactive variables, computed properties, and functions used in the <template> must be returned here.
         return {
-            // State variables
-            demons,
-            selectedLists,
-            playing,
-            fetching,
-            currentDemon,
-            currentPercent,
-            percents,
-            showRemaining,
-            showGiveUpModal,
-            showSaveModal,
-            showAboutModal,
-            darkMode,
-            useOldList,
-            excludeRouletteDemons, // Make sure this is returned for the checkbox
-
-            // Computed properties
-            currentDemons,
-            showResults,
-            remainingDemons,
-
-            // Methods
-            start,
-            demonDone,
-            giveUp,
-            save,
-            onSaveModalClose,
+            demons, selectedLists, playing, fetching, currentDemon, currentPercent, percents,
+            showRemaining, showGiveUpModal, showSaveModal, showAboutModal, darkMode,
+            useOldList, excludeRouletteDemons,
+            currentDemons, showResults, remainingDemons,
+            start, demonDone, giveUp, save, onSaveModalClose,
         };
     },
 });
