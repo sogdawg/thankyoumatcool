@@ -8,8 +8,8 @@ export function shuffle<T>(a: T[]): T[] {
     return a;
 }
 
-export function clearArray(a: any[]) {
-    a.splice(0, a.length);
+export function clearArray<T>(arr: T[]): void {
+    arr.length = 0;
 }
 
 // stupid pointercrate keeps going down
