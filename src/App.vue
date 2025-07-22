@@ -178,26 +178,23 @@ export default defineComponent({
             stopHandler();
         });
 
-        async function start() {
+        // --- NEW start() FUNCTION ---
+async function start() {
     if (fetching.value) return;
-    // The line below checks if any list is selected.
-    // If you always want to use veryOldList, you might not need this check,
-    // or you could simplify it if selectedLists.main is always true.
-    // For now, let's keep it but know it might be adjusted later.
+    // You can keep this line, or even simplify it if you remove checkboxes.
+    // If you always want to load, you could change it to 'if (false) return;' or remove the 'if'.
     if (!Object.values(selectedLists).some(i => i)) return;
 
     playing.value = true;
     fetching.value = true;
     showRemaining.value = false;
-    clearArray(demons);
+    clearArray(demons); // Clear the reactive array
     currentDemon.value = -1;
 
-    // Directly assign your veryOldDemons list here, unconditionally
-    // You can remove the 'if (useOldList.value)' check as it's no longer needed
-    // to conditionally load the old list.
-    demons.push(...veryOldDemons); // Use push to add to the reactive array
+    // --- THIS IS THE CRITICAL LINE ---
+    demons.push(...veryOldDemons); // Directly push all elements from your old list
 
-    fetching.value = false;
+    fetching.value = false; // Data is loaded, so fetching is done
     shuffle(demons);
     currentDemon.value = 0;
     currentPercent.value = 1;
