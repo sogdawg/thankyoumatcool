@@ -154,19 +154,19 @@ export default defineComponent({
 
         let demons = reactive([] as SimplifiedDemon[]);
 
-        async function fetchDemons(
-            after: number = 0,
-            limit: number = 100
-        ): Promise<SimplifiedDemon[]> {
-            const response = await fetch(
-                `https://pointercrate.com/api/v2/demons/listed/?limit=${limit}&after=${after}`
-            );
-            if (response.ok) {
-                return (await response.json()).map(simplifyDemon);
-            } else {
-                return [];
-            }
-        }
+        // async function fetchDemons(
+        //     after: number = 0,
+        //     limit: number = 100
+        // ): Promise<SimplifiedDemon[]> {
+        //     const response = await fetch(
+        //         `https://pointercrate.com/api/v2/demons/listed/?limit=${limit}&after=${after}`
+        //     );
+        //     if (response.ok) {
+        //         return (await response.json()).map(simplifyDemon);
+        //     } else {
+        //         return [];
+        //     }
+        // }
 
         const playing = ref(false);
         const fetching = ref(false);
@@ -179,34 +179,30 @@ export default defineComponent({
         });
 
         async function start() {
-            if (fetching.value) return;
-            if (!Object.values(selectedLists).some(i => i)) return;
-            playing.value = true;
-            fetching.value = true;
-            showRemaining.value = false;
-            clearArray(demons);
-            currentDemon.value = -1;
-            // if (false) {
-            //     for (let i = 0; i < 50; ++i) {
-            //         demons.push(fakeDemon(fakeDemonName(), 'MAT', null));
-            //     }
-            // }
-            if (selectedLists.main) demons.push(...(await fetchDemons(0, 75)));
-            if (selectedLists.extended) demons.push(...(await fetchDemons(75, 75)));
-            if (selectedLists.legacy) {
-                demons.push(...(await fetchDemons(150)));
-                // is this even worth it
-                demons.push(...(await fetchDemons(250)).filter(demon => demon.levelID));
-            }
-            if (useOldList.value) {
-                demons = veryOldDemons.slice();
-            }
-            fetching.value = false;
-            shuffle(demons);
-            currentDemon.value = 0;
-            currentPercent.value = 1;
-            clearArray(percents);
-        }
+    if (fetching.value) return;
+    // The line below checks if any list is selected.
+    // If you always want to use veryOldList, you might not need this check,
+    // or you could simplify it if selectedLists.main is always true.
+    // For now, let's keep it but know it might be adjusted later.
+    if (!Object.values(selectedLists).some(i => i)) return;
+
+    playing.value = true;
+    fetching.value = true;
+    showRemaining.value = false;
+    clearArray(demons);
+    currentDemon.value = -1;
+
+    // Directly assign your veryOldDemons list here, unconditionally
+    // You can remove the 'if (useOldList.value)' check as it's no longer needed
+    // to conditionally load the old list.
+    demons.push(...veryOldDemons); // Use push to add to the reactive array
+
+    fetching.value = false;
+    shuffle(demons);
+    currentDemon.value = 0;
+    currentPercent.value = 1;
+    clearArray(percents);
+}
 
         // maybe put this all in a big state object
 
