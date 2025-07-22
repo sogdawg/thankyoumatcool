@@ -1,4 +1,4 @@
-# [Extreme Demon Roulette](https://matcool.github.io/extreme-demon-roulette/)
+# [Extreme Demon Roulette](https://sogdawg.github.io/thankyoumatcool/)
 
 ![screenshot of the website](https://i.imgur.com/0Ws36xN.png)
 
