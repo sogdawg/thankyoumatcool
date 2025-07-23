@@ -2,16 +2,16 @@
     <main :class="{ dark: darkMode }">
         <div class="w-screen h-screen fixed -z-10 dark:bg-plain-gray"></div>
         <div class="flex justify-center">
-            <div class="flex flex-col">
-                <h1
-                    class="md:absolute md:left-1/2 md:top-3 md:-translate-x-1/2 mt-5 text-3xl font-medium text-center text-gray-800 dark:text-gray-200 cursor-help md:border-b-2 border-dashed hover:border-gray-600 dark:border-gray-600 dark:hover:border-gray-300"
+            <div class="flex flex-col w-full max-w-screen-xl px-4 mx-auto pb-20"> <h1
+                    class="mt-5 text-3xl font-medium text-center text-gray-800 dark:text-gray-200 cursor-help border-b-2 border-dashed border-gray-600 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-300 py-2"
                     @click="openAboutModal"
                 >
                     Extreme Demon Roulette
-                    <p v-if="useOldList">2017 List</p>
+                    <p v-if="useOldList" class="text-xl mt-1">2017 List</p>
                 </h1>
-                <div class="flex mt-5 mx-3 justify-between items-center">
-                    <div class="flex flex-col text-gray-800 dark:text-gray-300">
+
+                <div class="flex flex-col md:flex-row mt-5 justify-between items-center w-full gap-4 md:gap-0">
+                    <div class="flex flex-col text-gray-800 dark:text-gray-300 items-start">
                         <label>
                             <input type="checkbox" v-model="selectedLists.main" :disabled="useOldList" />
                             Main list
@@ -25,8 +25,7 @@
                             Exclude levels from ongoing roulette
                         </label>
                     </div>
-                    <div class="flex">
-                        <button
+                    <div class="flex mt-4 md:mt-0"> <button
                             @click="showSaveModal = true"
                             class="rounded px-4 py-2 bg-white text-black border border-gray-300 hover:bg-gray-100 mr-2"
                         >
@@ -46,8 +45,8 @@
                         </button>
                     </div>
                 </div>
-                <!-- CHANGED: Grid layout for demon cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-10 px-4 max-w-screen-xl mx-auto">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-10">
                     <demon
                         v-for="(demon, i) in currentDemons"
                         :key="i"
@@ -59,25 +58,35 @@
                         @give-up="openGiveUpModal"
                     />
                 </div>
+
                 <article
                     v-if="showResults"
-                    class="flex flex-col items-center mt-5 p-5 shadow-lg w-full"
+                    class="flex flex-col items-center mt-10 p-5 shadow-lg w-full bg-plain-gray-dark rounded-lg"
                 >
-                    <h2 class="text-3xl font-medium text-gray-800 dark:text-gray-200">Results</h2>
-                    <section class="text-xl mt-4 text-center dark:text-gray-200">
+                    <h2 class="text-3xl font-medium text-gray-800 dark:text-gray-200 mb-4">Results</h2>
+                    <section class="text-xl text-center dark:text-gray-200 mb-6">
                         <p>Number of demons: {{ percents.length }}</p>
                         <p>Highest percent: {{ currentPercent - 1 }}%</p>
                     </section>
-                    <button
-                        @click="showRemaining = true"
-                        v-if="currentPercent < 100"
-                        class="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
-                    >
-                        Show remaining demons
-                    </button>
+
+                    <template v-if="remainingDemons.length > 0">
+                        <h3 class="text-2xl font-medium text-gray-800 dark:text-gray-200 mb-4">Remaining Demons</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full">
+                            <demon
+                                v-for="(demon, i) in remainingDemons"
+                                :key="`remaining-${i}`"
+                                :demon="demon"
+                                :active="false"
+                                :currentPercent="0"
+                                :percent="0"
+                            />
+                        </div>
+                    </template>
+                    <p v-else-if="currentPercent >= 100" class="text-xl text-center dark:text-gray-200">
+                        Congratulations! You finished all levels!
+                    </p>
                 </article>
 
-                <!-- Modals -->
                 <teleport to="body">
                     <Modal v-if="showAboutModal" :show="showAboutModal" @close="closeAboutModal">
                         <template v-slot:header>
@@ -114,30 +123,6 @@
                 <teleport to="body">
                     <SaveModal v-if="showSaveModal" :show="showSaveModal" @close="onSaveModalClose" />
                 </teleport>
-
-                <teleport to="body">
-                    <Modal v-if="showRemaining" :show="showRemaining" @close="showRemaining = false">
-                        <template v-slot:header>
-                            <h3>Remaining Demons</h3>
-                        </template>
-                        <template v-slot:body>
-                            <div class="flex flex-col gap-2">
-                                <div v-for="(demon, i) in remainingDemons" :key="i">
-                                    {{ demon.position }}. {{ demon.name }} by {{ demon.creator }}
-                                </div>
-                            </div>
-                        </template>
-                        <template v-slot:footer>
-                            <button
-                                class="rounded px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white"
-                                @click="showRemaining = false"
-                            >
-                                Close
-                            </button>
-                        </template>
-                    </Modal>
-                </teleport>
-
                 <button
                     class="fixed bottom-5 right-5 w-12 h-12 rounded-full shadow-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-800 dark:text-gray-200 text-2xl"
                     @click="darkMode = !darkMode"
@@ -150,7 +135,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref, computed, onUnmounted, watchEffect, watch, Ref, ComputedRef } from 'vue'; // Import Ref and ComputedRef
+import { defineComponent, reactive, ref, computed, onUnmounted, watchEffect, watch, Ref, ComputedRef } from 'vue';
 import Demon from './components/Demon.vue';
 import Modal from './components/Modal.vue';
 import SaveModal from './components/SaveModal.vue';
@@ -164,26 +149,25 @@ import { saveAs } from 'file-saver';
 
 // Define an interface for the return type of setup()
 interface AppSetupReturn {
-    demons: SimplifiedDemon[]; // reactive array
-    selectedLists: { // reactive object
+    demons: SimplifiedDemon[];
+    selectedLists: {
         main: boolean;
         extended: boolean;
         legacy: boolean;
     };
-    playing: Ref<boolean>; // Ref
-    fetching: Ref<boolean>; // Ref
-    currentDemon: Ref<number>; // Ref
-    currentPercent: Ref<number>; // Ref
-    percents: number[]; // reactive array
-    showRemaining: Ref<boolean>; // Ref
-    showGiveUpModal: Ref<boolean>; // Ref
-    showSaveModal: Ref<boolean>; // Ref
-    showAboutModal: Ref<boolean>; // Ref
-    darkMode: Ref<boolean>; // Ref
-    useOldList: ComputedRef<boolean>; // ComputedRef
-    excludeRouletteDemons: Ref<boolean>; // Ref
+    playing: Ref<boolean>;
+    fetching: Ref<boolean>;
+    currentDemon: Ref<number>;
+    currentPercent: Ref<number>;
+    percents: number[];
+    showRemaining: Ref<boolean>; // This flag is no longer used to *open a modal*, but just for computed properties
+    showGiveUpModal: Ref<boolean>;
+    showSaveModal: Ref<boolean>;
+    showAboutModal: Ref<boolean>;
+    darkMode: Ref<boolean>;
+    useOldList: ComputedRef<boolean>;
+    excludeRouletteDemons: Ref<boolean>;
 
-    // Corrected types for computed properties: they return ComputedRef<T>
     currentDemons: ComputedRef<SimplifiedDemon[]>;
     showResults: ComputedRef<boolean>;
     remainingDemons: ComputedRef<SimplifiedDemon[]>;
@@ -207,12 +191,12 @@ export default defineComponent({
         SaveModal,
         GiveUpModal,
     },
-    setup(): AppSetupReturn { // Explicitly define the return type here
+    setup(): AppSetupReturn {
         // --- Reactive State Variables ---
         const selectedLists = reactive({
             main: true,
             extended: true,
-            legacy: false, // This property remains in the data, but is not tied to a visible checkbox in the template
+            legacy: false,
         });
 
         let demons = reactive([] as SimplifiedDemon[]);
@@ -224,7 +208,6 @@ export default defineComponent({
 
         const excludeRouletteDemons = ref(false);
 
-        // TEMPORARY DEBUG: Watch for changes to the checkbox states
         watch([selectedLists, excludeRouletteDemons], () => {
             console.log("Checkbox states changed:");
             console.log("Main:", selectedLists.main);
@@ -236,7 +219,7 @@ export default defineComponent({
         const currentPercent = ref(1);
         const percents = reactive([] as number[]);
 
-        const showRemaining = ref(false);
+        const showRemaining = ref(false); // This ref is still here but its usage has changed (no longer for modal)
         const showGiveUpModal = ref(false);
         const showSaveModal = ref(false);
         const showAboutModal = ref(false);
@@ -266,34 +249,26 @@ export default defineComponent({
         });
 
         // --- Functions ---
-
-        // Debugging functions for modals
         function openAboutModal() {
-            console.log("Attempting to open About Modal.");
             showAboutModal.value = true;
         }
 
         function closeAboutModal() {
-            console.log("Attempting to close About Modal.");
             showAboutModal.value = false;
         }
 
         function openGiveUpModal() {
-            console.log("Attempting to open Give Up Modal.");
             showGiveUpModal.value = true;
         }
 
         function closeGiveUpModal() {
-            console.log("Attempting to close Give Up Modal.");
             showGiveUpModal.value = false;
         }
 
         function confirmGiveUp() {
-            console.log("Give Up confirmed!");
-            closeGiveUpModal(); // Close the modal first
-            playing.value = false; // Then stop the game
+            closeGiveUpModal();
+            playing.value = false;
         }
-
 
         async function start() {
             if (fetching.value) return;
@@ -304,13 +279,11 @@ export default defineComponent({
 
             playing.value = true;
             fetching.value = true;
-            showRemaining.value = false;
+            showRemaining.value = false; // Reset this on start
 
             clearArray(demons);
 
             let demonsToProcess: SimplifiedDemon[] = [...veryOldDemons];
-
-            console.log(`Starting with ${demonsToProcess.length} demons from veryOldDemons.`);
 
             if (!useOldList.value) {
                 demonsToProcess = demonsToProcess.filter(demon => {
@@ -327,9 +300,6 @@ export default defineComponent({
 
                     return includeDemon;
                 });
-                console.log(`Demons after Main/Extended filters: ${demonsToProcess.length}`);
-            } else {
-                console.log("Using 2017 list mode, Main/Extended filters are ignored.");
             }
 
             const positionsToExclude: Set<number> = new Set([]);
@@ -352,7 +322,6 @@ export default defineComponent({
             });
 
             demons.push(...finalFilteredDemons);
-            console.log(`Final demons count after all filters: ${demons.length}`);
 
             if (demons.length === 0) {
                 console.warn("No demons loaded after applying all filters. Please adjust your selections.");
@@ -430,10 +399,11 @@ export default defineComponent({
         });
 
         const showResults = computed(() => {
-            return !playing.value && demons.length > 0;
+            return !playing.value && percents.length > 0; // Show results if not playing and some percents recorded
         });
 
         const remainingDemons = computed(() => {
+            if (currentPercent.value >= 100) return []; // If 100% reached, no remaining levels
             return demons
                 .slice(currentDemon.value + 1)
                 .filter((_, i) => currentPercent.value + i + 1 <= 100);
@@ -441,34 +411,12 @@ export default defineComponent({
 
         // --- Return properties and methods to the template ---
         return {
-            demons: demons, // Reactive array
-            selectedLists: selectedLists, // Reactive object
-            playing: playing, // Ref
-            fetching: fetching, // Ref
-            currentDemon: currentDemon, // Ref
-            currentPercent: currentPercent, // Ref
-            percents: percents, // Reactive array
-            showRemaining: showRemaining, // Ref
-            showGiveUpModal: showGiveUpModal, // Ref
-            showSaveModal: showSaveModal, // Ref
-            showAboutModal: showAboutModal, // Ref
-            darkMode: darkMode, // Ref
-            useOldList: useOldList, // ComputedRef
-            excludeRouletteDemons: excludeRouletteDemons, // Ref
-
-            currentDemons: currentDemons, // Return the ComputedRef directly
-            showResults: showResults,     // Return the ComputedRef directly
-            remainingDemons: remainingDemons, // Return the ComputedRef directly
-
-            start: start, // Function
-            demonDone: demonDone, // Function
-            save: save, // Function
-            onSaveModalClose: onSaveModalClose, // Function
-            openAboutModal: openAboutModal, // Function
-            closeAboutModal: closeAboutModal, // Function
-            openGiveUpModal: openGiveUpModal, // Function
-            closeGiveUpModal: closeGiveUpModal, // Function
-            confirmGiveUp: confirmGiveUp, // Function
+            demons, selectedLists, playing, fetching, currentDemon, currentPercent, percents,
+            showRemaining, showGiveUpModal, showSaveModal, showAboutModal, darkMode,
+            useOldList, excludeRouletteDemons,
+            currentDemons, showResults, remainingDemons,
+            start, demonDone, save, onSaveModalClose,
+            openAboutModal, closeAboutModal, openGiveUpModal, closeGiveUpModal, confirmGiveUp,
         };
     },
 });
