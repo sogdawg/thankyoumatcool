@@ -157,7 +157,7 @@ import GiveUpModal from './components/GiveUpModal.vue';
 import { RouletteState, SimplifiedDemon } from './types';
 import { shuffle, clearArray } from './utils';
 import { unloadHandler } from './unloadHandler';
-import { veryOldDemons } from './veryOldList';
+import { veryOldDemons } from './veryOldList'; // Your custom list
 import { simplifyDemon, compressState, decompressState } from './save';
 import { saveAs } from 'file-saver';
 
@@ -173,7 +173,7 @@ export default defineComponent({
         const selectedLists = reactive({
             main: true,
             extended: true,
-            legacy: false,
+            legacy: false, // This property remains in the data, but is not tied to a visible checkbox in the template
         });
 
         let demons = reactive([] as SimplifiedDemon[]);
