@@ -2,7 +2,10 @@
     <main :class="{ dark: darkMode }">
         <div class="w-screen h-screen fixed -z-10 dark:bg-plain-gray"></div>
         <div class="flex justify-center">
-            <div class="flex flex-col w-full max-w-screen-xl px-4 mx-auto pb-20"> <h1
+            <!-- Main Content Container: Centered, max-width, with padding -->
+            <div class="flex flex-col w-full max-w-screen-xl px-4 mx-auto pb-20"> <!-- Added pb-20 for bottom padding -->
+                <!-- Title Section -->
+                <h1
                     class="mt-5 text-3xl font-medium text-center text-gray-800 dark:text-gray-200 cursor-help border-b-2 border-dashed border-gray-600 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-300 py-2"
                     @click="openAboutModal"
                 >
@@ -10,6 +13,7 @@
                     <p v-if="useOldList" class="text-xl mt-1">2017 List</p>
                 </h1>
 
+                <!-- Checkbox and Buttons Section -->
                 <div class="flex flex-col md:flex-row mt-5 justify-between items-center w-full gap-4 md:gap-0">
                     <div class="flex flex-col text-gray-800 dark:text-gray-300 items-start">
                         <label>
@@ -25,7 +29,8 @@
                             Exclude levels from ongoing roulette
                         </label>
                     </div>
-                    <div class="flex mt-4 md:mt-0"> <button
+                    <div class="flex mt-4 md:mt-0"> <!-- Added margin-top for small screens -->
+                        <button
                             @click="showSaveModal = true"
                             class="rounded px-4 py-2 bg-white text-black border border-gray-300 hover:bg-gray-100 mr-2"
                         >
@@ -46,6 +51,7 @@
                     </div>
                 </div>
 
+                <!-- Demon Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-10">
                     <demon
                         v-for="(demon, i) in currentDemons"
@@ -59,6 +65,7 @@
                     />
                 </div>
 
+                <!-- Results Section (Now includes remaining levels in a grid, no longer a modal for remaining levels) -->
                 <article
                     v-if="showResults"
                     class="flex flex-col items-center mt-10 p-5 shadow-lg w-full bg-plain-gray-dark rounded-lg"
@@ -78,8 +85,8 @@
                                 :demon="demon"
                                 :active="false"
                                 :currentPercent="0"
-                                :percent="0"
-                            />
+                                :percent="currentPercent + percents.length + i"
+                            ></demon> <!-- CHANGED: Explicitly closed tag -->
                         </div>
                     </template>
                     <p v-else-if="currentPercent >= 100" class="text-xl text-center dark:text-gray-200">
@@ -87,6 +94,7 @@
                     </p>
                 </article>
 
+                <!-- Modals (Remaining unchanged, removed the 'showRemaining' modal) -->
                 <teleport to="body">
                     <Modal v-if="showAboutModal" :show="showAboutModal" @close="closeAboutModal">
                         <template v-slot:header>
@@ -123,6 +131,8 @@
                 <teleport to="body">
                     <SaveModal v-if="showSaveModal" :show="showSaveModal" @close="onSaveModalClose" />
                 </teleport>
+                <!-- Removed the 'showRemaining' modal section as it's now integrated directly -->
+
                 <button
                     class="fixed bottom-5 right-5 w-12 h-12 rounded-full shadow-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-800 dark:text-gray-200 text-2xl"
                     @click="darkMode = !darkMode"
@@ -160,7 +170,7 @@ interface AppSetupReturn {
     currentDemon: Ref<number>;
     currentPercent: Ref<number>;
     percents: number[];
-    showRemaining: Ref<boolean>; // This flag is no longer used to *open a modal*, but just for computed properties
+    showRemaining: Ref<boolean>;
     showGiveUpModal: Ref<boolean>;
     showSaveModal: Ref<boolean>;
     showAboutModal: Ref<boolean>;
@@ -219,7 +229,7 @@ export default defineComponent({
         const currentPercent = ref(1);
         const percents = reactive([] as number[]);
 
-        const showRemaining = ref(false); // This ref is still here but its usage has changed (no longer for modal)
+        const showRemaining = ref(false);
         const showGiveUpModal = ref(false);
         const showSaveModal = ref(false);
         const showAboutModal = ref(false);
@@ -399,14 +409,21 @@ export default defineComponent({
         });
 
         const showResults = computed(() => {
-            return !playing.value && percents.length > 0; // Show results if not playing and some percents recorded
+            return !playing.value && percents.length > 0;
         });
 
         const remainingDemons = computed(() => {
-            if (currentPercent.value >= 100) return []; // If 100% reached, no remaining levels
+            if (currentPercent.value >= 100) return [];
+            // Calculate the starting percent for the first remaining demon
+            const startPercentForRemaining = currentPercent.value;
             return demons
                 .slice(currentDemon.value + 1)
-                .filter((_, i) => currentPercent.value + i + 1 <= 100);
+                .map((demon, index) => ({
+                    ...demon,
+                    // Assign the sequential percentage
+                    percent: startPercentForRemaining + index
+                }))
+                .filter(demon => demon.percent <= 100); // Only show up to 100%
         });
 
         // --- Return properties and methods to the template ---
