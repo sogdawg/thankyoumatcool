@@ -130,7 +130,13 @@
                 </teleport>
 
                 <teleport to="body">
-                    <SaveModal v-if="showSaveModal" :show="showSaveModal" @close="onSaveModalClose" />
+                    <SaveModal
+                        v-if="showSaveModal"
+                        :show="showSaveModal"
+                        @close="showSaveModal = false"
+                        @save="save"       
+                        @load="loadSave"  
+                    />
                 </teleport>
 
                 <button
@@ -337,8 +343,9 @@ export default defineComponent({
                 percents: percents,
             };
             const data = compressState(state);
-            const blob = new Blob([data], { type: 'application/msgpack' });
+            const blob = new Blob([data], { type: 'application/msgpack' }); // Blob type might need to be 'application/octet-stream' or specific to fflate output
             saveAs(blob, 'roulette-save.mp');
+            console.log("Save initiated. Check console for compression errors.");
         }
 
         function onSaveModalClose(file?: File) {
@@ -349,6 +356,7 @@ export default defineComponent({
         }
 
         function loadSave(file: File) {
+            console.log("Loading save file:", file.name);
             file.arrayBuffer().then(buffer => {
                 const state = decompressState(new Uint8Array(buffer));
                 playing.value = state.playing;
@@ -360,9 +368,12 @@ export default defineComponent({
                 clearArray(percents);
                 percents.push(...state.percents);
                 showRemaining.value = false;
+                console.log("Save loaded successfully!");
             }).catch(error => {
                 console.error("Failed to load save file:", error);
-                alert("Failed to load save file. It might be corrupted or an old format.");
+                // Use a custom message box instead of alert()
+                // For now, keeping alert for direct debugging purposes as per previous instructions
+                alert("Failed to load save file. It might be corrupted or an old format. Check console for details.");
             });
         }
 
@@ -377,17 +388,14 @@ export default defineComponent({
 
         const remainingDemons = computed(() => {
             if (currentPercent.value >= 100) return [];
-            // The starting percent for the first remaining demon should be currentPercent + 1
-            // because currentPercent is the target of the demon you were *on* when you gave up.
-            const startPercentForRemaining = currentPercent.value + 1; // CHANGED: Added +1 here
+            const startPercentForRemaining = currentPercent.value + 1;
             return demons
                 .slice(currentDemon.value + 1)
                 .map((demon, index) => ({
                     ...demon,
-                    // Calculate the sequential percentage based on startPercentForRemaining
                     percent: startPercentForRemaining + index
                 }))
-                .filter(demon => demon.percent <= 100); // Only show up to 100%
+                .filter(demon => demon.percent <= 100);
         });
 
         // --- Return properties and methods to the template ---
@@ -396,7 +404,7 @@ export default defineComponent({
             showRemaining, showGiveUpModal, showSaveModal, showAboutModal, darkMode,
             useOldList, excludeRouletteDemons,
             currentDemons, showResults, remainingDemons,
-            start, demonDone, save, onSaveModalClose,
+            start, demonDone, save, loadSave, // Expose loadSave directly
             openAboutModal, closeAboutModal, openGiveUpModal, closeGiveUpModal, confirmGiveUp,
         };
     },
