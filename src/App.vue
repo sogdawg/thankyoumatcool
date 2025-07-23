@@ -53,7 +53,7 @@
                         :demon="demon"
                         :active="playing && i === currentDemon"
                         :currentPercent="currentPercent"
-                        :percent="currentPercent"
+                        :percent="i === currentDemon ? currentPercent : percents[i]"
                         @done="demonDone"
                         @give-up="openGiveUpModal"
                     />

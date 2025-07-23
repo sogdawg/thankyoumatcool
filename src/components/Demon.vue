@@ -2,8 +2,8 @@
     <div
         class="flex flex-col items-center p-5 shadow-lg rounded-lg w-full max-w-xl transition-all duration-300 ease-in-out"
         :class="{
-            'bg-gray-100 dark:bg-gray-800': !active,
-            'bg-blue-100 dark:bg-blue-900 ring-2 ring-blue-500 transform scale-105': active,
+            'bg-plain-gray-dark': !active, /* CHANGED: Dark gray background for inactive */
+            'bg-blue-900 ring-2 ring-blue-500 transform scale-105': active, /* Active state */
         }"
     >
         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -90,6 +90,10 @@ export default defineComponent({
             }
         }, { immediate: true }); // Run immediately on component mount
 
+        // Debugging log for video URL
+        console.log(`Demon.vue: Processing demon "${props.demon.name}". Video URL received:`, props.demon.video);
+
+
         // Function to get YouTube embed URL
         function getEmbedUrl(url: string | null): string {
             if (!url) return '';
@@ -97,6 +101,7 @@ export default defineComponent({
             if (videoIdMatch && videoIdMatch[1]) {
                 return `https://www.youtube.com/embed/${videoIdMatch[1]}?autoplay=1`;
             }
+            console.warn(`Demon.vue: Could not parse embed URL for: ${url}`);
             return ''; // Return empty string if not a valid YouTube URL
         }
 
@@ -107,6 +112,7 @@ export default defineComponent({
             if (videoIdMatch && videoIdMatch[1]) {
                 return `https://img.youtube.com/vi/${videoIdMatch[1]}/hqdefault.jpg`;
             }
+            console.warn(`Demon.vue: Could not parse thumbnail URL for: ${url}`);
             return 'https://placehold.co/480x360/cccccc/333333?text=No+Thumbnail'; // Fallback placeholder
         }
 
@@ -115,6 +121,8 @@ export default defineComponent({
             if (props.active && props.demon.video) { // Only play if active demon and video exists
                 console.log(`Demon.vue: Thumbnail clicked for ${props.demon.name}. Setting showVideo to true.`);
                 showVideo.value = true;
+            } else if (!props.demon.video) {
+                console.warn(`Demon.vue: Clicked on thumbnail area for ${props.demon.name}, but no video URL found.`);
             }
         }
 
@@ -143,7 +151,6 @@ export default defineComponent({
 <style scoped>
 /* Add some basic styling for .demon-card if it's not already in your CSS */
 .demon-card {
-    background-color: #f0f0f0;
     border: 1px solid #ccc;
     padding: 20px;
     border-radius: 8px;
@@ -152,13 +159,13 @@ export default defineComponent({
     max-width: 400px;
     margin-bottom: 20px;
 }
+/* Removed direct light mode background-color, relying on Tailwind classes */
 .dark .demon-card {
-    background-color: #333;
     border-color: #555;
     color: #eee;
 }
 .demon-card.active {
-    border-color: rgb(28, 28, 31);
+    border-color: blue;
     box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
 }
 </style>
