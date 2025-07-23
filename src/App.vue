@@ -53,7 +53,7 @@
                         :demon="demon"
                         :active="playing && i === currentDemon"
                         :currentPercent="currentPercent"
-                        :percent="percents[i]"
+                        :percent="currentPercent"
                         @done="demonDone"
                         @give-up="openGiveUpModal"
                     />
@@ -78,7 +78,7 @@
 
                 <!-- Modals -->
                 <teleport to="body">
-                    <Modal v-if="showAboutModal" @close="closeAboutModal">
+                    <Modal v-if="showAboutModal" :show="showAboutModal" @close="closeAboutModal">
                         <template v-slot:header>
                             <h3>About the Extreme Demon Roulette</h3>
                         </template>
@@ -107,15 +107,15 @@
                 </teleport>
 
                 <teleport to="body">
-                    <GiveUpModal v-if="showGiveUpModal" @confirm="confirmGiveUp" @close="closeGiveUpModal" />
+                    <GiveUpModal v-if="showGiveUpModal" :show="showGiveUpModal" @confirm="confirmGiveUp" @close="closeGiveUpModal" />
                 </teleport>
 
                 <teleport to="body">
-                    <SaveModal v-if="showSaveModal" @close="onSaveModalClose" />
+                    <SaveModal v-if="showSaveModal" :show="showSaveModal" @close="onSaveModalClose" />
                 </teleport>
 
                 <teleport to="body">
-                    <Modal v-if="showRemaining" @close="showRemaining = false">
+                    <Modal v-if="showRemaining" :show="showRemaining" @close="showRemaining = false">
                         <template v-slot:header>
                             <h3>Remaining Demons</h3>
                         </template>

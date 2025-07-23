@@ -68,8 +68,8 @@ export default defineComponent({
             required: true,
         },
         active: Boolean,
-        currentPercent: Number,
-        percent: Number,
+        currentPercent: Number, // This prop is received but not directly used in template
+        percent: Number, // This prop is the target percent for the current demon
     },
     emits: ['done', 'give-up'], // Declare emitted events
 
@@ -115,7 +115,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* Existing CSS for demon-card, ensure it's here */
+/* Add some basic styling for .demon-card if it's not already in your CSS */
 .demon-card {
     background-color: #f0f0f0;
     border: 1px solid #ccc;

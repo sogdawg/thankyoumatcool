@@ -30,10 +30,10 @@ import { defineComponent } from 'vue';
 export default defineComponent({
     name: 'Modal',
     props: {
-        show: Boolean,
+        show: Boolean, // This prop controls visibility
         cancelable: Boolean,
     },
-    emits: ['close'],
+    emits: ['close'], // Declare emitted events
     setup(props, ctx) {
         function close() {
             if (props.cancelable) ctx.emit('close');
