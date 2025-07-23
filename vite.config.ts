@@ -1,13 +1,20 @@
+// vite.config.ts
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [vue()],
-    // Change this line:
-    base: '/thankyoumatcool/', // <-- Make sure this matches your repository name with leading/trailing slashes
+    base: '/thankyoumatcool/',
     build: {
-        outDir: 'docs', // Or 'dist' if you switched back to that
+        outDir: 'docs',
         assetsDir: 'assets',
+        // --- NEW: Explicitly define main.css as an entry point ---
+        rollupOptions: {
+            input: {
+                main: './index.html', // Your main HTML entry
+                style: './src/main.css', // Explicitly include your CSS file
+            },
+        },
     },
 });
