@@ -1,9 +1,9 @@
 <template>
     <div
-        class="flex flex-col items-center p-5 shadow-lg rounded-lg w-full max-w-xl transition-all duration-300 ease-in-out"
+        class="flex flex-col items-center p-5 shadow-lg rounded-lg w-full transition-all duration-300 ease-in-out"
         :class="{
             'bg-plain-gray-dark': !active, /* Dark gray background for inactive */
-            'bg-plain-gray-light ring-2 ring-blue-500 transform scale-105': active, /* Dark gray for active */
+            'bg-plain-gray-light ring-2 ring-blue-500 transform scale-105': active, /* CHANGED: Dark gray for active */
         }"
     >
         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -65,18 +65,27 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, watch, PropType } from 'vue'; // Import PropType
 import { SimplifiedDemon } from '../types'; // Adjust path if needed
 
 export default defineComponent({
     props: {
         demon: {
-            type: Object as () => SimplifiedDemon,
+            type: Object as PropType<SimplifiedDemon>, // Explicitly type the demon prop
             required: true,
         },
-        active: Boolean, // Indicates if this is the currently active demon in roulette
-        currentPercent: Number, // The overall current percent of the roulette (from App.vue)
-        percent: Number, // The target percent for *this* specific demon (passed from App.vue)
+        active: { // Explicitly define type for active
+            type: Boolean,
+            required: true,
+        },
+        currentPercent: { // Explicitly define type for currentPercent
+            type: Number,
+            required: true,
+        },
+        percent: { // Explicitly define type for percent
+            type: Number,
+            required: true,
+        },
     },
     emits: ['done', 'give-up'], // Declare emitted events
 
@@ -182,7 +191,7 @@ export default defineComponent({
     border-radius: 8px;
     text-align: center;
     width: 80%;
-    max-width: 400px;
+    /* Removed max-width to allow grid to control size */
     margin-bottom: 20px;
 }
 /* No specific dark mode rule for background here, relying on Tailwind classes */

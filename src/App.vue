@@ -46,7 +46,8 @@
                         </button>
                     </div>
                 </div>
-                <div class="flex flex-col items-center w-screen max-w-7xl gap-5 mt-10">
+                <!-- CHANGED: Grid layout for demon cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-10 px-4 max-w-screen-xl mx-auto">
                     <demon
                         v-for="(demon, i) in currentDemons"
                         :key="i"
@@ -76,6 +77,7 @@
                     </button>
                 </article>
 
+                <!-- Modals -->
                 <teleport to="body">
                     <Modal v-if="showAboutModal" :show="showAboutModal" @close="closeAboutModal">
                         <template v-slot:header>
@@ -148,7 +150,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref, computed, onUnmounted, watchEffect, watch } from 'vue';
+import { defineComponent, reactive, ref, computed, onUnmounted, watchEffect, watch, Ref, ComputedRef } from 'vue'; // Import Ref and ComputedRef
 import Demon from './components/Demon.vue';
 import Modal from './components/Modal.vue';
 import SaveModal from './components/SaveModal.vue';
@@ -160,6 +162,44 @@ import { veryOldDemons } from './veryOldList'; // Your custom list
 import { simplifyDemon, compressState, decompressState } from './save';
 import { saveAs } from 'file-saver';
 
+// Define an interface for the return type of setup()
+interface AppSetupReturn {
+    demons: SimplifiedDemon[]; // reactive array
+    selectedLists: { // reactive object
+        main: boolean;
+        extended: boolean;
+        legacy: boolean;
+    };
+    playing: Ref<boolean>; // Ref
+    fetching: Ref<boolean>; // Ref
+    currentDemon: Ref<number>; // Ref
+    currentPercent: Ref<number>; // Ref
+    percents: number[]; // reactive array
+    showRemaining: Ref<boolean>; // Ref
+    showGiveUpModal: Ref<boolean>; // Ref
+    showSaveModal: Ref<boolean>; // Ref
+    showAboutModal: Ref<boolean>; // Ref
+    darkMode: Ref<boolean>; // Ref
+    useOldList: ComputedRef<boolean>; // ComputedRef
+    excludeRouletteDemons: Ref<boolean>; // Ref
+
+    // Corrected types for computed properties: they return ComputedRef<T>
+    currentDemons: ComputedRef<SimplifiedDemon[]>;
+    showResults: ComputedRef<boolean>;
+    remainingDemons: ComputedRef<SimplifiedDemon[]>;
+
+    start: () => Promise<void>;
+    demonDone: (percent: number) => void;
+    save: () => void;
+    onSaveModalClose: (file?: File) => void;
+    openAboutModal: () => void;
+    closeAboutModal: () => void;
+    openGiveUpModal: () => void;
+    closeGiveUpModal: () => void;
+    confirmGiveUp: () => void;
+}
+
+
 export default defineComponent({
     components: {
         Demon,
@@ -167,7 +207,7 @@ export default defineComponent({
         SaveModal,
         GiveUpModal,
     },
-    setup() {
+    setup(): AppSetupReturn { // Explicitly define the return type here
         // --- Reactive State Variables ---
         const selectedLists = reactive({
             main: true,
@@ -210,8 +250,8 @@ export default defineComponent({
             "The Hell Factory", "Novalis", "Spacial Rend", "Niflheim", "Arctic Arena",
             "Ithacropolis", "The Hell World", "The Hell Origin", "Conical Depression",
             "Penultimate Phase", "Bausha Vortex", "Elite Z Rebirth", "Prismatic Haze",
-            "Devil Vortex", "Rate Demon", "Delta Interface", "Phobos", "Digital Descent",
-            "Down Bass by Spectra", "Asmodeus", "The Hell Dignity", "Ouroboros", "Omega",
+            "Devil Vortex", "Rate Demon", "Delta Interface",
+            "Phobos", "Digital Descent", "Down Bass by Spectra", "Asmodeus", "The Hell Dignity", "Ouroboros", "Omega",
             "Lucid Nightmares",
         ]);
 
@@ -401,13 +441,34 @@ export default defineComponent({
 
         // --- Return properties and methods to the template ---
         return {
-            demons, selectedLists, playing, fetching, currentDemon, currentPercent, percents,
-            showRemaining, showGiveUpModal, showSaveModal, showAboutModal, darkMode,
-            useOldList, excludeRouletteDemons,
-            currentDemons, showResults, remainingDemons,
-            start, demonDone, save, onSaveModalClose,
-            // Debugging functions for modals
-            openAboutModal, closeAboutModal, openGiveUpModal, closeGiveUpModal, confirmGiveUp,
+            demons: demons, // Reactive array
+            selectedLists: selectedLists, // Reactive object
+            playing: playing, // Ref
+            fetching: fetching, // Ref
+            currentDemon: currentDemon, // Ref
+            currentPercent: currentPercent, // Ref
+            percents: percents, // Reactive array
+            showRemaining: showRemaining, // Ref
+            showGiveUpModal: showGiveUpModal, // Ref
+            showSaveModal: showSaveModal, // Ref
+            showAboutModal: showAboutModal, // Ref
+            darkMode: darkMode, // Ref
+            useOldList: useOldList, // ComputedRef
+            excludeRouletteDemons: excludeRouletteDemons, // Ref
+
+            currentDemons: currentDemons, // Return the ComputedRef directly
+            showResults: showResults,     // Return the ComputedRef directly
+            remainingDemons: remainingDemons, // Return the ComputedRef directly
+
+            start: start, // Function
+            demonDone: demonDone, // Function
+            save: save, // Function
+            onSaveModalClose: onSaveModalClose, // Function
+            openAboutModal: openAboutModal, // Function
+            closeAboutModal: closeAboutModal, // Function
+            openGiveUpModal: openGiveUpModal, // Function
+            closeGiveUpModal: closeGiveUpModal, // Function
+            confirmGiveUp: confirmGiveUp, // Function
         };
     },
 });
