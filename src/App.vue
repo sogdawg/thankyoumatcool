@@ -157,8 +157,6 @@ import { veryOldDemons } from './veryOldList'; // Your custom list
 import { simplifyDemon, compressState, decompressState } from './save';
 import { saveAs } from 'file-saver';
 
-// Removed the AppSetupReturn interface. Relying on Vue's inference for setup() return.
-
 export default defineComponent({
     components: {
         Demon,
@@ -166,7 +164,7 @@ export default defineComponent({
         SaveModal,
         GiveUpModal,
     },
-    setup() { // Removed explicit return type here
+    setup() {
         // --- Reactive State Variables ---
         const selectedLists = reactive({
             main: true,
@@ -379,8 +377,9 @@ export default defineComponent({
 
         const remainingDemons = computed(() => {
             if (currentPercent.value >= 100) return [];
-            // The starting percent for the first remaining demon is currentPercent
-            const startPercentForRemaining = currentPercent.value;
+            // The starting percent for the first remaining demon should be currentPercent + 1
+            // because currentPercent is the target of the demon you were *on* when you gave up.
+            const startPercentForRemaining = currentPercent.value + 1; // CHANGED: Added +1 here
             return demons
                 .slice(currentDemon.value + 1)
                 .map((demon, index) => ({

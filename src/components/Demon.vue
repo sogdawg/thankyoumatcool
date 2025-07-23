@@ -1,14 +1,18 @@
 <template>
     <div
-        class="flex flex-col items-center p-5 shadow-lg rounded-lg w-full transition-all duration-300 ease-in-out"
+        class="flex flex-col items-center p-5 shadow-lg rounded-lg w-full transition-all duration-300 ease-in-out border-2"
         :class="{
-            'bg-plain-gray-dark': !active, /* Dark gray background for inactive */
-            'bg-plain-gray-light ring-2 ring-blue-500 transform scale-105': active, /* Dark gray for active */
+            'bg-plain-gray-dark border-gray-600': !active, /* CHANGED: More visible border for inactive */
+            'bg-plain-gray-light ring-2 ring-blue-500 transform scale-105 border-blue-500': active, /* Dark gray for active, blue ring/border */
         }"
     >
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2 w-full text-center truncate px-2"> {{ demon.position }}. {{ demon.name }}
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2 w-full text-center truncate px-2">
+            {{ demon.position }}. {{ demon.name }}
         </h2>
-        <p class="text-gray-600 dark:text-gray-400 mb-4 text-center truncate w-full px-2">by {{ demon.creator }}</p> <div
+        <p class="text-gray-600 dark:text-gray-400 mb-4 text-center truncate w-full px-2">by {{ demon.creator }}</p>
+
+        <!-- Video Player / Thumbnail - Now click-to-play -->
+        <div
             class="w-full aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden mb-4 relative cursor-pointer"
             @click="playVideo"
         >
@@ -33,6 +37,7 @@
             <div v-else class="w-full h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                 No Video Available
             </div>
+            <!-- Play button overlay for thumbnail -->
             <div v-if="!showVideo && demon.video" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
                 <svg class="w-16 h-16 text-white opacity-80" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
             </div>
