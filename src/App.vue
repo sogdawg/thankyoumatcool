@@ -5,7 +5,7 @@
             <div class="flex flex-col">
                 <h1
                     class="md:absolute md:left-1/2 md:top-3 md:-translate-x-1/2 mt-5 text-3xl font-medium text-center text-gray-800 dark:text-gray-200 cursor-help md:border-b-2 border-dashed hover:border-gray-600 dark:border-gray-600 dark:hover:border-gray-300"
-                    @click="showAboutModal = true"
+                    @click="openAboutModal"
                 >
                     Extreme Demon Roulette
                     <p v-if="useOldList">2017 List</p>
@@ -55,7 +55,7 @@
                         :currentPercent="currentPercent"
                         :percent="percents[i]"
                         @done="demonDone"
-                        @give-up="showGiveUpModal = true"
+                        @give-up="openGiveUpModal"
                     />
                 </div>
                 <article
@@ -78,7 +78,7 @@
 
                 <!-- Modals -->
                 <teleport to="body">
-                    <Modal v-if="showAboutModal" @close="showAboutModal = false">
+                    <Modal v-if="showAboutModal" @close="closeAboutModal">
                         <template v-slot:header>
                             <h3>About the Extreme Demon Roulette</h3>
                         </template>
@@ -98,7 +98,7 @@
                         <template v-slot:footer>
                             <button
                                 class="rounded px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white"
-                                @click="showAboutModal = false"
+                                @click="closeAboutModal"
                             >
                                 Close
                             </button>
@@ -107,7 +107,7 @@
                 </teleport>
 
                 <teleport to="body">
-                    <GiveUpModal v-if="showGiveUpModal" @confirm="giveUp" @close="showGiveUpModal = false" />
+                    <GiveUpModal v-if="showGiveUpModal" @confirm="confirmGiveUp" @close="closeGiveUpModal" />
                 </teleport>
 
                 <teleport to="body">
@@ -157,7 +157,7 @@ import GiveUpModal from './components/GiveUpModal.vue';
 import { RouletteState, SimplifiedDemon } from './types';
 import { shuffle, clearArray } from './utils';
 import { unloadHandler } from './unloadHandler';
-import { veryOldDemons } from './veryOldList'; // Your custom list
+import { veryOldDemons } from './veryOldList';
 import { simplifyDemon, compressState, decompressState } from './save';
 import { saveAs } from 'file-saver';
 
@@ -173,7 +173,7 @@ export default defineComponent({
         const selectedLists = reactive({
             main: true,
             extended: true,
-            legacy: false, // This property remains in the data, but is not tied to a visible checkbox in the template
+            legacy: false,
         });
 
         let demons = reactive([] as SimplifiedDemon[]);
@@ -216,8 +216,6 @@ export default defineComponent({
             "Lucid Nightmares",
         ]);
 
-        // Removed fetchDemons as we are primarily using veryOldDemons
-
         // --- Lifecycle Hooks & Handlers ---
         const stopHandler = unloadHandler(playing);
         onUnmounted(() => {
@@ -229,10 +227,37 @@ export default defineComponent({
         });
 
         // --- Functions ---
+
+        // Debugging functions for modals
+        function openAboutModal() {
+            console.log("Attempting to open About Modal.");
+            showAboutModal.value = true;
+        }
+
+        function closeAboutModal() {
+            console.log("Attempting to close About Modal.");
+            showAboutModal.value = false;
+        }
+
+        function openGiveUpModal() {
+            console.log("Attempting to open Give Up Modal.");
+            showGiveUpModal.value = true;
+        }
+
+        function closeGiveUpModal() {
+            console.log("Attempting to close Give Up Modal.");
+            showGiveUpModal.value = false;
+        }
+
+        function confirmGiveUp() {
+            console.log("Give Up confirmed!");
+            closeGiveUpModal(); // Close the modal first
+            playing.value = false; // Then stop the game
+        }
+
+
         async function start() {
             if (fetching.value) return;
-            // Ensure at least one list type is selected (main or extended) when not in old list mode
-            // This check is now more relevant as Main/Extended will filter veryOldDemons
             if (!useOldList.value && !(selectedLists.main || selectedLists.extended)) {
                 console.warn("Please select at least one list type (Main or Extended) to start the roulette.");
                 return;
@@ -242,19 +267,16 @@ export default defineComponent({
             fetching.value = true;
             showRemaining.value = false;
 
-            clearArray(demons); // Clear the reactive array
+            clearArray(demons);
 
-            let demonsToProcess: SimplifiedDemon[] = [...veryOldDemons]; // Start with your full custom list
+            let demonsToProcess: SimplifiedDemon[] = [...veryOldDemons];
 
             console.log(`Starting with ${demonsToProcess.length} demons from veryOldDemons.`);
 
-            // Apply Main/Extended list filters if not in 2017 list mode
             if (!useOldList.value) {
                 demonsToProcess = demonsToProcess.filter(demon => {
-                    // Define your position ranges for Main and Extended lists within veryOldDemons
-                    // You might need to adjust these ranges based on your veryOldDemons data
-                    const isMainListRange = demon.position >= 1 && demon.position <= 75; // Example: Top 75
-                    const isExtendedListRange = demon.position >= 76 && demon.position <= 150; // Example: 76-150
+                    const isMainListRange = demon.position >= 1 && demon.position <= 75;
+                    const isExtendedListRange = demon.position >= 76 && demon.position <= 150;
 
                     let includeDemon = false;
                     if (selectedLists.main && isMainListRange) {
@@ -274,7 +296,6 @@ export default defineComponent({
             const positionsToExclude: Set<number> = new Set([]);
             const namesToExclude: Set<string> = new Set([]);
 
-            // Apply all additional filtering rules to the demonsToProcess array
             const finalFilteredDemons = demonsToProcess.filter((demon: SimplifiedDemon) => {
                 if (positionsToExclude.has(demon.position)) {
                     return false;
@@ -323,11 +344,6 @@ export default defineComponent({
             }
             currentPercent.value = percent + 1;
             percents.push(percent);
-        }
-
-        function giveUp() {
-            showGiveUpModal.value = false;
-            playing.value = false;
         }
 
         function save() {
@@ -390,7 +406,9 @@ export default defineComponent({
             showRemaining, showGiveUpModal, showSaveModal, showAboutModal, darkMode,
             useOldList, excludeRouletteDemons,
             currentDemons, showResults, remainingDemons,
-            start, demonDone, giveUp, save, onSaveModalClose,
+            start, demonDone, save, onSaveModalClose,
+            // Debugging functions for modals
+            openAboutModal, closeAboutModal, openGiveUpModal, closeGiveUpModal, confirmGiveUp,
         };
     },
 });
