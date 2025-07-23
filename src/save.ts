@@ -1,9 +1,9 @@
 // src/save.ts
 
-import { encode, decode } from '@msgpack/msgpack';
-import { inflateSync, deflateSync, strFromU8, unzlibSync } from 'fflate';
-import { base64ToBytes } from 'byte-base64';
-import type { PointercrateDemon, SimplifiedDemon, RouletteState } from './types';
+import { encode, decode } from '@msgpack/msgpack'; // Make sure you have this installed via npm/yarn
+import { inflateSync, deflateSync, strFromU8, unzlibSync } from 'fflate'; // Make sure you have this installed via npm/yarn
+import { base64ToBytes } from 'byte-base64'; // Make sure you have this installed via npm/yarn
+import type { PointercrateDemon, SimplifiedDemon, RouletteState } from './types'; // Ensure './types' path is correct
 
 export function simplifyDemon(demon: PointercrateDemon): SimplifiedDemon {
     // This regex extracts the 11-character YouTube video ID from a full URL
@@ -79,14 +79,14 @@ function handleOldSave(data: Uint8Array): RouletteState {
         console.log("Decoded old save (MessagePack):", decoded);
 
         return {
-            current: decoded.demon,
-            percent: decoded.percent,
-            percents: decoded.percents,
-            playing: decoded.playing,
+            current: decoded.demon || null, // Use decoded.demon for old saves if that's what it was called
+            percent: decoded.percent || 0,
+            percents: decoded.percents || [],
+            playing: decoded.playing || false,
             selectedLists: {
-                main: decoded.main,
-                extended: decoded.extended,
-                legacy: decoded.legacy,
+                main: decoded.main || false,
+                extended: decoded.extended || false,
+                legacy: decoded.legacy || false,
             },
             demons: decoded.demons.map((demonArray: any[]) => {
                 // Ensure demonArray has enough elements to prevent errors
@@ -105,6 +105,8 @@ function handleOldSave(data: Uint8Array): RouletteState {
                     link: demonArray[5] || "", // Optional link
                 } as SimplifiedDemon;
             }),
+            completedDemonNames: decoded.completedDemonNames || [], // <-- IMPORTANT: Ensure this is passed through for old saves too
+            version: decoded.version || 0, // Assume version 0 if not explicitly set
         };
     } catch (error) {
         console.error("Error during old save decompression:", error);
@@ -115,7 +117,6 @@ function handleOldSave(data: Uint8Array): RouletteState {
 export function decompressState(data: Uint8Array): RouletteState {
     console.log("Decompressing state. Received data length:", data.length);
     // Check if the data looks like a base64 encoded string (old format)
-    // This check is a heuristic; it might need refinement if new formats also look like base64
     if (data.every(i => isBase64Character(i))) {
         console.log("Data appears to be base64 encoded. Attempting old save handler.");
         return handleOldSave(data);
@@ -126,26 +127,51 @@ export function decompressState(data: Uint8Array): RouletteState {
         console.log("Attempting to decompress new save format (inflateSync then decode).");
         const uncompressed = inflateSync(data);
         console.log("Uncompressed (fflate inflateSync):", uncompressed);
-        const decoded = decode(uncompressed) as RouletteState;
+        const decoded = decode(uncompressed) as any; // Cast to any to access properties easily
         console.log("Decoded new save (MessagePack):", decoded);
 
-        // If the new format is loaded, ensure demons are objects, not arrays of values
-        if (decoded.demons && decoded.demons.length > 0 && Array.isArray(decoded.demons[0])) {
-            // This means it was encoded as Object.values, convert back if necessary for new format
-            // However, with the fix in compressState, this path should ideally not be hit for new saves
-            // if the version is explicitly handled. For now, assume compressState saves correctly.
-            console.warn("Demons in new save appear to be arrays, converting to objects.");
-            decoded.demons = (decoded.demons as any[]).map(demonArray => ({
-                position: demonArray[0],
-                name: demonArray[1],
-                creator: demonArray[2],
-                video: demonArray[3],
-                levelID: demonArray[4] || undefined,
-                link: demonArray[5] || "",
-            })) as SimplifiedDemon[];
+        // --- THE KEY FIX IS HERE ---
+        // Spread all properties from the decoded object to ensure all top-level state
+        // (like completedDemonNames) is carried over.
+        let reconstructedState: RouletteState = {
+            ...decoded, // This will copy current, percent, percents, playing, selectedLists, completedDemonNames, version
+            demons: [], // Initialize demons, will be re-mapped below
+        };
+
+        // Handle the demons array transformation (from array of values back to SimplifiedDemon objects)
+        // This is crucial because compressState maps demons to arrays of values.
+        if (decoded.demons && Array.isArray(decoded.demons)) {
+            reconstructedState.demons = decoded.demons.map((demonArray: any[]) => {
+                if (demonArray.length < 4) { // Basic check for malformed data
+                    console.warn("Malformed demon array in new save:", demonArray);
+                    return { position: 0, name: "Unknown", creator: "Unknown", video: null, link: "" } as SimplifiedDemon;
+                }
+                return {
+                    position: demonArray[0],
+                    name: demonArray[1],
+                    creator: demonArray[2],
+                    video: demonArray[3],
+                    levelID: demonArray[4] || undefined,
+                    link: demonArray[5] || "",
+                } as SimplifiedDemon;
+            });
         }
 
-        return decoded;
+        // If 'current' demon was also serialized as an array of values, re-map it.
+        // This handles cases where 'current' might be an array [pos, name, creator, video]
+        if (reconstructedState.current && Array.isArray(reconstructedState.current)) {
+            const currentArray = reconstructedState.current as any[];
+            reconstructedState.current = {
+                position: currentArray[0],
+                name: currentArray[1],
+                creator: currentArray[2],
+                video: currentArray[3],
+                levelID: currentArray[4] || undefined,
+                link: currentArray[5] || "",
+            } as SimplifiedDemon;
+        }
+
+        return reconstructedState;
     } catch (error) {
         console.error("Error during new save decompression:", error);
         // If new format decompression fails, it might still be an old format that slipped through the check

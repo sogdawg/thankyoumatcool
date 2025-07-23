@@ -1,3 +1,5 @@
+// src/types.ts
+
 export interface PointercrateDemon {
     id: number;
     level_id: number;
@@ -34,7 +36,9 @@ export interface RouletteState {
         legacy: boolean;
     };
     demons: SimplifiedDemon[];
-    current: number;
+    current: SimplifiedDemon | null; // <-- CHANGED: Can now be a SimplifiedDemon object or null
     percent: number;
     percents: number[];
+    completedDemonNames: string[]; // <-- ADDED: To track completed levels by name
+    version?: number; // <-- ADDED: Optional version for save file compatibility
 }
