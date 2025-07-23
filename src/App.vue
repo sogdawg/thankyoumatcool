@@ -6,7 +6,7 @@
             <div class="flex flex-col w-full max-w-screen-xl px-4 mx-auto pb-20"> <!-- Added pb-20 for bottom padding -->
                 <!-- Title Section -->
                 <h1
-                    class="mt-5 text-3xl font-medium text-center text-gray-800 dark:text-gray-200 cursor-help border-b-2 border-dashed border-gray-600 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-300 py-2"
+                    class="md:absolute md:left-1/2 md:top-3 md:-translate-x-1/2 mt-5 text-3xl font-medium text-center text-gray-800 dark:text-gray-200 cursor-help border-b-2 border-dashed border-gray-600 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-300 py-2"
                     @click="openAboutModal"
                 >
                     Extreme Demon Roulette
@@ -76,7 +76,8 @@
                         <p>Highest percent: {{ currentPercent - 1 }}%</p>
                     </section>
 
-                    <template v-if="remainingDemons.length > 0">
+                    <!-- CHANGED: Replaced <template> with <div> for conditional rendering -->
+                    <div v-if="remainingDemons.length > 0">
                         <h3 class="text-2xl font-medium text-gray-800 dark:text-gray-200 mb-4">Remaining Demons</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full">
                             <demon
@@ -85,16 +86,16 @@
                                 :demon="demon"
                                 :active="false"
                                 :currentPercent="0"
-                                :percent="currentPercent + percents.length + i"
-                            ></demon> <!-- CHANGED: Explicitly closed tag -->
+                                :percent="remainingDemons[i].percent"
+                            ></demon>
                         </div>
-                    </template>
+                    </div>
                     <p v-else-if="currentPercent >= 100" class="text-xl text-center dark:text-gray-200">
                         Congratulations! You finished all levels!
                     </p>
                 </article>
 
-                <!-- Modals (Remaining unchanged, removed the 'showRemaining' modal) -->
+                <!-- Modals -->
                 <teleport to="body">
                     <Modal v-if="showAboutModal" :show="showAboutModal" @close="closeAboutModal">
                         <template v-slot:header>
@@ -131,7 +132,6 @@
                 <teleport to="body">
                     <SaveModal v-if="showSaveModal" :show="showSaveModal" @close="onSaveModalClose" />
                 </teleport>
-                <!-- Removed the 'showRemaining' modal section as it's now integrated directly -->
 
                 <button
                     class="fixed bottom-5 right-5 w-12 h-12 rounded-full shadow-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-800 dark:text-gray-200 text-2xl"
@@ -157,42 +157,7 @@ import { veryOldDemons } from './veryOldList'; // Your custom list
 import { simplifyDemon, compressState, decompressState } from './save';
 import { saveAs } from 'file-saver';
 
-// Define an interface for the return type of setup()
-interface AppSetupReturn {
-    demons: SimplifiedDemon[];
-    selectedLists: {
-        main: boolean;
-        extended: boolean;
-        legacy: boolean;
-    };
-    playing: Ref<boolean>;
-    fetching: Ref<boolean>;
-    currentDemon: Ref<number>;
-    currentPercent: Ref<number>;
-    percents: number[];
-    showRemaining: Ref<boolean>;
-    showGiveUpModal: Ref<boolean>;
-    showSaveModal: Ref<boolean>;
-    showAboutModal: Ref<boolean>;
-    darkMode: Ref<boolean>;
-    useOldList: ComputedRef<boolean>;
-    excludeRouletteDemons: Ref<boolean>;
-
-    currentDemons: ComputedRef<SimplifiedDemon[]>;
-    showResults: ComputedRef<boolean>;
-    remainingDemons: ComputedRef<SimplifiedDemon[]>;
-
-    start: () => Promise<void>;
-    demonDone: (percent: number) => void;
-    save: () => void;
-    onSaveModalClose: (file?: File) => void;
-    openAboutModal: () => void;
-    closeAboutModal: () => void;
-    openGiveUpModal: () => void;
-    closeGiveUpModal: () => void;
-    confirmGiveUp: () => void;
-}
-
+// Removed the AppSetupReturn interface. Relying on Vue's inference for setup() return.
 
 export default defineComponent({
     components: {
@@ -201,7 +166,7 @@ export default defineComponent({
         SaveModal,
         GiveUpModal,
     },
-    setup(): AppSetupReturn {
+    setup() { // Removed explicit return type here
         // --- Reactive State Variables ---
         const selectedLists = reactive({
             main: true,
@@ -414,13 +379,13 @@ export default defineComponent({
 
         const remainingDemons = computed(() => {
             if (currentPercent.value >= 100) return [];
-            // Calculate the starting percent for the first remaining demon
+            // The starting percent for the first remaining demon is currentPercent
             const startPercentForRemaining = currentPercent.value;
             return demons
                 .slice(currentDemon.value + 1)
                 .map((demon, index) => ({
                     ...demon,
-                    // Assign the sequential percentage
+                    // Calculate the sequential percentage based on startPercentForRemaining
                     percent: startPercentForRemaining + index
                 }))
                 .filter(demon => demon.percent <= 100); // Only show up to 100%
