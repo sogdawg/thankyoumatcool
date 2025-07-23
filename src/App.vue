@@ -76,7 +76,6 @@
                     </button>
                 </article>
 
-                <!-- Modals -->
                 <teleport to="body">
                     <Modal v-if="showAboutModal" :show="showAboutModal" @close="closeAboutModal">
                         <template v-slot:header>
