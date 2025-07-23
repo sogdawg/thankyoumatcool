@@ -2,8 +2,8 @@
     <div
         class="flex flex-col items-center p-5 shadow-lg rounded-lg w-full max-w-xl transition-all duration-300 ease-in-out"
         :class="{
-            'bg-plain-gray-dark': !active, /* CHANGED: Dark gray background for inactive */
-            'bg-blue-900 ring-2 ring-blue-500 transform scale-105': active, /* Active state */
+            'bg-plain-gray-dark': !active, /* Dark gray background for inactive */
+            'bg-plain-gray-light ring-2 ring-blue-500 transform scale-105': active, /* Dark gray for active */
         }"
     >
         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -91,28 +91,54 @@ export default defineComponent({
         }, { immediate: true }); // Run immediately on component mount
 
         // Debugging log for video URL
-        console.log(`Demon.vue: Processing demon "${props.demon.name}". Video URL received:`, props.demon.video);
+        console.log(`Demon.vue: Processing demon "${props.demon.name}". Video ID/URL received:`, props.demon.video);
 
+        // Regex to check if it's just a YouTube video ID (11 characters, alphanumeric, hyphen, underscore)
+        const youtubeIdRegex = /^[a-zA-Z0-9_-]{11}$/;
 
         // Function to get YouTube embed URL
-        function getEmbedUrl(url: string | null): string {
-            if (!url) return '';
-            const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-            if (videoIdMatch && videoIdMatch[1]) {
-                return `https://www.youtube.com/embed/${videoIdMatch[1]}?autoplay=1`;
+        function getEmbedUrl(urlOrId: string | null): string {
+            if (!urlOrId) return '';
+            let videoId = '';
+
+            // Check if it's already just an ID
+            if (youtubeIdRegex.test(urlOrId)) {
+                videoId = urlOrId;
+            } else {
+                // Otherwise, try to parse from a full URL
+                const videoIdMatch = urlOrId.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                if (videoIdMatch && videoIdMatch[1]) {
+                    videoId = videoIdMatch[1];
+                }
             }
-            console.warn(`Demon.vue: Could not parse embed URL for: ${url}`);
-            return ''; // Return empty string if not a valid YouTube URL
+
+            if (videoId) {
+                return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            }
+            console.warn(`Demon.vue: Could not parse embed URL from: ${urlOrId}`);
+            return ''; // Return empty string if not a valid YouTube URL or ID
         }
 
         // Function to get YouTube thumbnail URL
-        function getThumbnailUrl(url: string | null): string {
-            if (!url) return '';
-            const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-            if (videoIdMatch && videoIdMatch[1]) {
-                return `https://img.youtube.com/vi/${videoIdMatch[1]}/hqdefault.jpg`;
+        function getThumbnailUrl(urlOrId: string | null): string {
+            if (!urlOrId) return '';
+            let videoId = '';
+
+            // Check if it's already just an ID
+            if (youtubeIdRegex.test(urlOrId)) {
+                videoId = urlOrId;
+            } else {
+                // Otherwise, try to parse from a full URL
+                const videoIdMatch = urlOrId.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                if (videoIdMatch && videoIdMatch[1]) {
+                    videoId = videoIdMatch[1];
+                }
             }
-            console.warn(`Demon.vue: Could not parse thumbnail URL for: ${url}`);
+
+            if (videoId) {
+                return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+            }
+            console.warn(`Demon.vue: Could not parse thumbnail URL from: ${urlOrId}`);
             return 'https://placehold.co/480x360/cccccc/333333?text=No+Thumbnail'; // Fallback placeholder
         }
 
@@ -151,7 +177,7 @@ export default defineComponent({
 <style scoped>
 /* Add some basic styling for .demon-card if it's not already in your CSS */
 .demon-card {
-    border: 1px solid #ccc;
+    border: 1px solid #ccc; /* Consider changing this border color too if desired */
     padding: 20px;
     border-radius: 8px;
     text-align: center;
@@ -159,13 +185,10 @@ export default defineComponent({
     max-width: 400px;
     margin-bottom: 20px;
 }
-/* Removed direct light mode background-color, relying on Tailwind classes */
+/* No specific dark mode rule for background here, relying on Tailwind classes */
 .dark .demon-card {
-    border-color: #555;
+    border-color: #555; /* Dark mode border color */
     color: #eee;
 }
-.demon-card.active {
-    border-color: blue;
-    box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
-}
+/* The active class ring is still blue, adjust if you want a different ring color */
 </style>
