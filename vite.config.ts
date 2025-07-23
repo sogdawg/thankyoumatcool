@@ -5,16 +5,9 @@ import vue from '@vitejs/plugin-vue';
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [vue()],
-    base: '/thankyoumatcool/',
+    base: '/thankyoumatcool/', // This must match your GitHub repository name
     build: {
-        outDir: 'docs',
+        outDir: 'docs', // This must match the folder GitHub Pages is serving from
         assetsDir: 'assets',
-        // --- NEW: Explicitly define main.css as an entry point ---
-        rollupOptions: {
-            input: {
-                main: './index.html', // Your main HTML entry
-                style: './src/main.css', // Explicitly include your CSS file
-            },
-        },
     },
 });
